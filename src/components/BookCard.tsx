@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Download } from 'lucide-react'
 import { Book } from '../data/books'
 import { useLibrary } from '../context/LibraryContext'
 
@@ -11,6 +12,7 @@ export default function BookCard({ book, index = 0 }: BookCardProps) {
   const { setOpenBook, bookmarks, toggleBookmark, readingProgress } = useLibrary();
   const [imgError, setImgError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [downloadPulsing, setDownloadPulsing] = useState(false);
   const isBookmarked = bookmarks.includes(book.id);
   const progress = readingProgress[book.id] || 0;
 
@@ -20,6 +22,41 @@ export default function BookCard({ book, index = 0 }: BookCardProps) {
     const full = Math.floor(rating);
     const half = rating % 1 >= 0.5;
     return '★'.repeat(full) + (half ? '½' : '');
+  };
+
+  // Trigger a real file download for the PDF
+  const handleDownload = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDownloadPulsing(true);
+    setTimeout(() => setDownloadPulsing(false), 800);
+
+    const url = book.pdf_filePath;
+    const filename = `${book.title}.pdf`;
+
+    // For base64 data URLs (admin-uploaded) — create a blob and click-download
+    if (url.startsWith('data:')) {
+      const byteStr = atob(url.split(',')[1]);
+      const mime = url.split(',')[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteStr.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteStr.length; i++) ia[i] = byteStr.charCodeAt(i);
+      const blob = new Blob([ab], { type: mime });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      return;
+    }
+
+    // For external URLs — open in new tab (cross-origin blocks direct download)
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.click();
   };
 
   return (
@@ -42,7 +79,7 @@ export default function BookCard({ book, index = 0 }: BookCardProps) {
     >
       {/* Cover image */}
       <div style={{ position: 'relative', aspectRatio: '2/3', overflow: 'hidden', background: '#1a1a2e' }}>
-        {!imgError ? (
+        {!imgError && book.coverImageURL ? (
           <img
             src={book.coverImageURL}
             alt={book.title}
@@ -108,20 +145,41 @@ export default function BookCard({ book, index = 0 }: BookCardProps) {
           {isBookmarked ? '🔖' : '🏷️'}
         </button>
 
-        {/* Read button on hover */}
+        {/* Read + Download buttons on hover */}
         <div style={{
           position: 'absolute', bottom: '12px', left: '12px', right: '12px',
           opacity: isHovered ? 1 : 0, transform: isHovered ? 'translateY(0)' : 'translateY(10px)',
-          transition: 'all 0.3s ease'
+          transition: 'all 0.3s ease',
+          display: 'flex', gap: '8px', alignItems: 'center'
         }}>
+          {/* Read button */}
           <div style={{
+            flex: 1,
             background: 'linear-gradient(135deg, var(--indigo-500), #7c3aed)',
-            color: 'white', borderRadius: '10px', padding: '8px 12px',
-            fontSize: '13px', fontWeight: 600, textAlign: 'center',
+            color: 'white', borderRadius: '10px', padding: '8px 10px',
+            fontSize: '12px', fontWeight: 600, textAlign: 'center',
             boxShadow: '0 4px 16px rgba(99,102,241,0.4)'
           }}>
-            {progress > 0 ? `Continue Reading (${Math.round(progress)}%)` : 'Read Now →'}
+            {progress > 0 ? `Continue (${Math.round(progress)}%)` : 'Read Now →'}
           </div>
+
+          {/* Download button */}
+          <button
+            onClick={handleDownload}
+            title={`Download "${book.title}"`}
+            style={{
+              width: 34, height: 34, borderRadius: '10px', flexShrink: 0,
+              background: downloadPulsing ? 'rgba(16,185,129,0.5)' : 'rgba(0,0,0,0.6)',
+              backdropFilter: 'blur(8px)',
+              border: `1px solid ${downloadPulsing ? 'rgba(16,185,129,0.6)' : 'rgba(255,255,255,0.2)'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+              transform: downloadPulsing ? 'scale(0.9)' : 'scale(1)',
+              transition: 'all 0.2s'
+            }}
+          >
+            <Download size={14} color={downloadPulsing ? '#6ee7b7' : 'white'} />
+          </button>
         </div>
 
         {/* Reading progress bar */}
@@ -134,16 +192,49 @@ export default function BookCard({ book, index = 0 }: BookCardProps) {
 
       {/* Info */}
       <div style={{ padding: '14px' }}>
-        <div style={{ marginBottom: '4px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
-          <h3 style={{ fontSize: '14px', fontWeight: 700, lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any }}>
+        <div style={{ marginBottom: '4px' }}>
+          <h3 style={{
+            fontSize: '14px', fontWeight: 700, lineHeight: 1.3,
+            overflow: 'hidden', display: '-webkit-box',
+            WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any
+          }}>
             {book.title}
           </h3>
         </div>
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>{book.author}</p>
+
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '11px', color: '#f59e0b' }}>{renderStars(book.rating)} <span style={{ color: 'var(--text-muted)' }}>{book.rating}</span></span>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{book.pages}p</span>
+          <span style={{ fontSize: '11px', color: '#f59e0b' }}>
+            {renderStars(book.rating)} <span style={{ color: 'var(--text-muted)' }}>{book.rating}</span>
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {book.pages > 0 && (
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{book.pages}p</span>
+            )}
+            {/* Static download icon visible always (minimalist) */}
+            <button
+              onClick={handleDownload}
+              title={`Download "${book.title}"`}
+              style={{
+                background: 'none', border: 'none', padding: '3px',
+                cursor: 'pointer', display: 'flex', alignItems: 'center',
+                color: 'var(--text-muted)', borderRadius: '6px',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--indigo-300)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.1)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'none';
+              }}
+            >
+              <Download size={13} />
+            </button>
+          </div>
         </div>
+
         <div style={{ marginTop: '8px', display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
           {book.tags.slice(0, 2).map(tag => (
             <span key={tag} style={{

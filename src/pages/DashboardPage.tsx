@@ -1,19 +1,24 @@
 import React, { useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
+import { Shield } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useLibrary } from '../context/LibraryContext'
-import { books, getFeaturedBooks, getNewBooks } from '../data/books'
+import { books as staticBooks, getFeaturedBooks, getNewBooks } from '../data/books'
 import Sidebar from '../components/Sidebar'
 import BookCard from '../components/BookCard'
 import PDFViewerModal from '../components/PDFViewerModal'
 import MobileBottomNav from '../components/MobileBottomNav'
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const { searchQuery, setSearchQuery, selectedGenre, bookmarks, readingProgress, openBook } = useLibrary();
+  const { user, isAdmin } = useAuth();
+  const { searchQuery, setSearchQuery, selectedGenre, bookmarks, readingProgress, uploadedBooks } = useLibrary();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Merge static books + admin-uploaded books (uploaded books appear first under "New")
+  const allBooks = useMemo(() => [...staticBooks, ...uploadedBooks], [uploadedBooks]);
+
   const filteredBooks = useMemo(() => {
-    let result = [...books];
+    let result = [...allBooks];
     if (selectedGenre !== 'All') {
       result = result.filter(b => b.genre === selectedGenre);
     }
@@ -27,13 +32,12 @@ export default function DashboardPage() {
       );
     }
     return result;
-  }, [searchQuery, selectedGenre]);
+  }, [searchQuery, selectedGenre, allBooks]);
 
   const featuredBooks = getFeaturedBooks();
-  const newBooks = getNewBooks();
-  const inProgressBooks = books.filter(b => readingProgress[b.id] > 0 && readingProgress[b.id] < 100);
-  const bookmarkedBooks = books.filter(b => bookmarks.includes(b.id));
-
+  const newBooks = [...uploadedBooks, ...getNewBooks()]; // uploaded books = new
+  const inProgressBooks = allBooks.filter(b => readingProgress[b.id] > 0 && readingProgress[b.id] < 100);
+  const bookmarkedBooks = allBooks.filter(b => bookmarks.includes(b.id));
   const isFiltering = searchQuery || selectedGenre !== 'All';
 
   return (
@@ -62,6 +66,7 @@ export default function DashboardPage() {
       {/* Main content */}
       <main style={{ marginLeft: 'clamp(0px, 260px, 260px)', minHeight: '100vh', position: 'relative', zIndex: 1 }}
         className="main-content">
+
         {/* Mobile Header */}
         <div className="mobile-nav" style={{
           position: 'sticky', top: 0, zIndex: 50,
@@ -77,9 +82,44 @@ export default function DashboardPage() {
             <div style={{ fontSize: '20px' }}>📚</div>
             <span style={{ fontWeight: 800, fontSize: '16px' }}>Libra</span>
           </div>
+          {isAdmin && (
+            <Link to="/admin" style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px',
+              background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.25)',
+              borderRadius: 8, color: 'var(--indigo-300)', fontSize: 12, fontWeight: 600
+            }}>
+              <Shield size={13} /> Admin
+            </Link>
+          )}
         </div>
 
         <div style={{ padding: 'clamp(16px, 3vw, 40px)', paddingBottom: 'clamp(88px, 10vw, 40px)' }}>
+
+          {/* Admin banner (desktop) */}
+          {isAdmin && (
+            <div className="animate-fade-in-up" style={{
+              display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24,
+              padding: '14px 20px', borderRadius: 14,
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(124,58,237,0.08))',
+              border: '1px solid rgba(99,102,241,0.2)'
+            }}>
+              <Shield size={18} color="var(--indigo-400)" />
+              <div style={{ flex: 1 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--indigo-300)' }}>Admin Mode Active</span>
+                <span style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 10 }}>
+                  You've uploaded {uploadedBooks.length} book{uploadedBooks.length !== 1 ? 's' : ''} to the library.
+                </span>
+              </div>
+              <Link to="/admin" style={{
+                display: 'flex', alignItems: 'center', gap: 7, padding: '8px 16px',
+                background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
+                borderRadius: 10, color: 'var(--indigo-300)', fontSize: 13, fontWeight: 600
+              }}>
+                <Shield size={14} /> Go to Admin Panel →
+              </Link>
+            </div>
+          )}
+
           {/* Top bar with search */}
           <div className="animate-fade-in-up" style={{
             display: 'flex', alignItems: 'center', gap: '16px',
@@ -129,11 +169,13 @@ export default function DashboardPage() {
               </div>
               <div style={{
                 width: 42, height: 42, borderRadius: '50%',
-                background: 'linear-gradient(135deg, var(--indigo-500), #7c3aed)',
+                background: isAdmin
+                  ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                  : 'linear-gradient(135deg, var(--indigo-500), #7c3aed)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '16px', fontWeight: 700, color: 'white',
-                border: '2px solid rgba(99,102,241,0.4)',
-                boxShadow: '0 4px 16px rgba(99,102,241,0.3)'
+                border: `2px solid ${isAdmin ? 'rgba(239,68,68,0.4)' : 'rgba(99,102,241,0.4)'}`,
+                boxShadow: `0 4px 16px ${isAdmin ? 'rgba(239,68,68,0.3)' : 'rgba(99,102,241,0.3)'}`
               }}>
                 {user?.name?.charAt(0).toUpperCase()}
               </div>
@@ -146,7 +188,7 @@ export default function DashboardPage() {
             gap: '12px', marginBottom: '36px'
           }}>
             {[
-              { icon: '📚', label: 'Total Books', value: books.length, color: 'var(--indigo-400)' },
+              { icon: '📚', label: 'Total Books', value: allBooks.length, color: 'var(--indigo-400)' },
               { icon: '🔖', label: 'Bookmarked', value: bookmarks.length, color: '#f59e0b' },
               { icon: '📖', label: 'In Progress', value: inProgressBooks.length, color: '#10b981' },
               { icon: '✅', label: 'Completed', value: Object.keys(readingProgress).filter(id => readingProgress[id] >= 100).length, color: '#a78bfa' },
@@ -180,20 +222,20 @@ export default function DashboardPage() {
             </Section>
           )}
 
+          {/* New / Uploaded section */}
+          {!isFiltering && newBooks.length > 0 && (
+            <Section title="New Arrivals" emoji="🆕" count={newBooks.length}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '16px' }}>
+                {newBooks.map((book, i) => <BookCard key={book.id} book={book} index={i} />)}
+              </div>
+            </Section>
+          )}
+
           {/* Featured */}
           {!isFiltering && (
             <Section title="Featured Books" emoji="✨" count={featuredBooks.length}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '16px' }}>
                 {featuredBooks.map((book, i) => <BookCard key={book.id} book={book} index={i} />)}
-              </div>
-            </Section>
-          )}
-
-          {/* New */}
-          {!isFiltering && newBooks.length > 0 && (
-            <Section title="New Arrivals" emoji="🆕" count={newBooks.length}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '16px' }}>
-                {newBooks.map((book, i) => <BookCard key={book.id} book={book} index={i} />)}
               </div>
             </Section>
           )}
@@ -209,17 +251,13 @@ export default function DashboardPage() {
 
           {/* All / Filtered books */}
           <Section
-            title={isFiltering ? `Search Results` : 'All Books'}
+            title={isFiltering ? 'Search Results' : 'All Books'}
             emoji={isFiltering ? '🔍' : '📚'}
             count={filteredBooks.length}
             subtitle={isFiltering ? `for "${searchQuery || selectedGenre}"` : undefined}
           >
             {filteredBooks.length > 0 ? (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-                gap: '16px'
-              }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '16px' }}>
                 {filteredBooks.map((book, i) => <BookCard key={book.id} book={book} index={i} />)}
               </div>
             ) : (
@@ -230,10 +268,8 @@ export default function DashboardPage() {
               }}>
                 <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
                 <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>No books found</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-                  Try adjusting your search query or genre filter
-                </p>
-                <button onClick={() => { setSearchQuery(''); }} style={{
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Try adjusting your search query or genre filter</p>
+                <button onClick={() => setSearchQuery('')} style={{
                   marginTop: '16px', padding: '10px 20px',
                   background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)',
                   borderRadius: '10px', color: 'var(--indigo-300)', fontSize: '14px', cursor: 'pointer'
@@ -253,12 +289,8 @@ export default function DashboardPage() {
       </div>
 
       <style>{`
-        @media (min-width: 769px) {
-          .main-content { margin-left: 260px !important; }
-        }
-        @media (max-width: 768px) {
-          .main-content { margin-left: 0 !important; }
-        }
+        @media (min-width: 769px) { .main-content { margin-left: 260px !important; } }
+        @media (max-width: 768px) { .main-content { margin-left: 0 !important; } }
       `}</style>
     </div>
   );

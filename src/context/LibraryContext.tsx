@@ -1,6 +1,30 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { Book } from '../data/books'
 
+const UPLOADED_BOOKS_KEY = 'libra_uploaded_books';
+
+// Helpers to persist user-uploaded books in localStorage
+export const getUploadedBooks = (): Book[] => {
+  try {
+    const raw = localStorage.getItem(UPLOADED_BOOKS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+};
+
+export const saveUploadedBook = (book: Book) => {
+  const current = getUploadedBooks();
+  // Replace if same id, else append
+  const updated = current.some(b => b.id === book.id)
+    ? current.map(b => b.id === book.id ? book : b)
+    : [...current, book];
+  localStorage.setItem(UPLOADED_BOOKS_KEY, JSON.stringify(updated));
+};
+
+export const deleteUploadedBook = (id: string) => {
+  const updated = getUploadedBooks().filter(b => b.id !== id);
+  localStorage.setItem(UPLOADED_BOOKS_KEY, JSON.stringify(updated));
+};
+
 interface LibraryContextType {
   openBook: Book | null;
   setOpenBook: (book: Book | null) => void;
@@ -13,6 +37,9 @@ interface LibraryContextType {
   selectedGenre: string;
   setSelectedGenre: (g: string) => void;
   recentlyViewed: string[];
+  uploadedBooks: Book[];
+  addUploadedBook: (book: Book) => void;
+  removeUploadedBook: (id: string) => void;
 }
 
 const LibraryContext = createContext<LibraryContextType | undefined>(undefined);
@@ -24,6 +51,7 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('All');
   const [recentlyViewed, setRecentlyViewed] = useState<string[]>([]);
+  const [uploadedBooks, setUploadedBooks] = useState<Book[]>([]);
 
   useEffect(() => {
     const saved = localStorage.getItem('libra_progress');
@@ -32,6 +60,7 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
     if (bm) try { setBookmarks(JSON.parse(bm)); } catch {}
     const rv = localStorage.getItem('libra_recent');
     if (rv) try { setRecentlyViewed(JSON.parse(rv)); } catch {}
+    setUploadedBooks(getUploadedBooks());
   }, []);
 
   const updateProgress = (bookId: string, progress: number) => {
@@ -57,6 +86,16 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const addUploadedBook = (book: Book) => {
+    saveUploadedBook(book);
+    setUploadedBooks(getUploadedBooks());
+  };
+
+  const removeUploadedBook = (id: string) => {
+    deleteUploadedBook(id);
+    setUploadedBooks(prev => prev.filter(b => b.id !== id));
+  };
+
   return (
     <LibraryContext.Provider value={{
       openBook, setOpenBook: handleSetOpenBook,
@@ -64,7 +103,8 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
       bookmarks, toggleBookmark,
       searchQuery, setSearchQuery,
       selectedGenre, setSelectedGenre,
-      recentlyViewed
+      recentlyViewed,
+      uploadedBooks, addUploadedBook, removeUploadedBook
     }}>
       {children}
     </LibraryContext.Provider>

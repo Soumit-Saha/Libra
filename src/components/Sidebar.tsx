@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Shield } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useLibrary } from '../context/LibraryContext'
 import { genres, books } from '../data/books'
@@ -15,7 +17,7 @@ const NAV_ITEMS = [
 ];
 
 export default function Sidebar({ onMobileClose }: SidebarProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const { selectedGenre, setSelectedGenre, bookmarks, readingProgress } = useLibrary();
   const [activeNav, setActiveNav] = useState('dashboard');
 
@@ -100,6 +102,31 @@ export default function Sidebar({ onMobileClose }: SidebarProps) {
           ))}
         </div>
       </nav>
+
+      {/* Admin Panel link — only visible to admin */}
+      {isAdmin && (
+        <div style={{ padding: '12px 12px 0' }}>
+          <Link
+            to="/admin"
+            onClick={() => onMobileClose?.()}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '11px 14px', borderRadius: 12, textDecoration: 'none',
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(124,58,237,0.12))',
+              border: '1px solid rgba(99,102,241,0.3)',
+              color: 'var(--indigo-300)', fontSize: 14, fontWeight: 600
+            }}
+          >
+            <Shield size={15} />
+            <span>Admin Panel</span>
+            <span style={{
+              marginLeft: 'auto', fontSize: 10, padding: '2px 7px',
+              background: 'rgba(99,102,241,0.25)', borderRadius: 8,
+              color: 'var(--indigo-300)', fontWeight: 700
+            }}>ADMIN</span>
+          </Link>
+        </div>
+      )}
 
       {/* User profile at bottom */}
       <div style={{
