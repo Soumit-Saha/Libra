@@ -3,7 +3,7 @@ export interface Book {
   title: string;
   author: string;
   coverImageURL: string;
-  pdf_filePath: string;
+  pdf_filePath: string;   // public URL (Supabase or external)
   genre: string;
   year: number;
   pages: number;
@@ -12,6 +12,10 @@ export interface Book {
   tags: string[];
   featured?: boolean;
   new?: boolean;
+  // Supabase-specific (admin-uploaded books only)
+  _pdfPath?: string;      // storage object path for deletion
+  _coverPath?: string;
+  _dbId?: string;         // row id in the `books` table
 }
 
 export const books: Book[] = [
