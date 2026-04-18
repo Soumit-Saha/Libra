@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import DashboardPage from './pages/DashboardPage'
 import AdminPage from './pages/AdminPage'
+import AuthorsPage from './pages/AuthorsPage'
 import LoadingScreen from './components/LoadingScreen'
 
 // Redirect to /login if not authenticated
@@ -40,6 +41,7 @@ const AppRoutes = () => (
       <Route path="/login"     element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/signup"    element={<PublicRoute><SignupPage /></PublicRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/authors"   element={<ProtectedRoute><AuthorsPage /></ProtectedRoute>} />
       <Route path="/admin"     element={<AdminRoute><AdminPage /></AdminRoute>} />
       <Route path="*"          element={<Navigate to="/dashboard" replace />} />
     </Routes>

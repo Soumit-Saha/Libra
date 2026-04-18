@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Download } from 'lucide-react'
 import { Book } from '../data/books'
 import { useLibrary } from '../context/LibraryContext'
@@ -10,6 +11,7 @@ interface BookCardProps {
 
 export default function BookCard({ book, index = 0 }: BookCardProps) {
   const { setOpenBook, bookmarks, toggleBookmark, readingProgress } = useLibrary();
+  const navigate = useNavigate();
   const [imgError, setImgError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [downloadPulsing, setDownloadPulsing] = useState(false);
@@ -201,7 +203,23 @@ export default function BookCard({ book, index = 0 }: BookCardProps) {
             {book.title}
           </h3>
         </div>
-        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>{book.author}</p>
+        <p
+          onClick={e => {
+            e.stopPropagation();
+            if (book.authorId) navigate(`/authors?id=${book.authorId}`);
+          }}
+          title={book.authorId ? `View ${book.author}'s profile` : undefined}
+          style={{
+            fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px',
+            cursor: book.authorId ? 'pointer' : 'default',
+            display: 'inline-block',
+            transition: 'color 0.2s',
+          }}
+          onMouseEnter={e => { if (book.authorId) (e.currentTarget as HTMLElement).style.color = 'var(--indigo-300)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
+        >
+          {book.author}{book.authorId ? ' ↗' : ''}
+        </p>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: '11px', color: '#f59e0b' }}>

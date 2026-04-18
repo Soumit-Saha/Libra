@@ -1,5 +1,6 @@
 export interface Book {
   id: string;
+  authorId: string;       // links to Author.id in authors.ts
   title: string;
   author: string;
   coverImageURL: string;
@@ -21,6 +22,7 @@ export interface Book {
 export const books: Book[] = [
   {
     id: "1",
+    authorId: "fitzgerald",
     title: "The Great Gatsby",
     author: "F. Scott Fitzgerald",
     coverImageURL: "https://covers.openlibrary.org/b/id/8226561-L.jpg",
@@ -35,6 +37,7 @@ export const books: Book[] = [
   },
   {
     id: "2",
+    authorId: "orwell",
     title: "1984",
     author: "George Orwell",
     coverImageURL: "https://covers.openlibrary.org/b/id/8575708-L.jpg",
@@ -49,6 +52,7 @@ export const books: Book[] = [
   },
   {
     id: "3",
+    authorId: "austen",
     title: "Pride and Prejudice",
     author: "Jane Austen",
     coverImageURL: "https://covers.openlibrary.org/b/id/8739161-L.jpg",
@@ -57,11 +61,12 @@ export const books: Book[] = [
     year: 1813,
     pages: 432,
     rating: 4.8,
-    description: "The story follows the main character Elizabeth Bennet as she deals with issues of manners, upbringing, morality, education and marriage.",
+    description: "The story follows Elizabeth Bennet as she deals with issues of manners, upbringing, morality, education and marriage.",
     tags: ["Romance", "Classic", "British"]
   },
   {
     id: "4",
+    authorId: "doyle",
     title: "The Adventures of Sherlock Holmes",
     author: "Arthur Conan Doyle",
     coverImageURL: "https://covers.openlibrary.org/b/id/8458659-L.jpg",
@@ -75,6 +80,7 @@ export const books: Book[] = [
   },
   {
     id: "5",
+    authorId: "melville",
     title: "Moby Dick",
     author: "Herman Melville",
     coverImageURL: "https://covers.openlibrary.org/b/id/8234077-L.jpg",
@@ -88,6 +94,7 @@ export const books: Book[] = [
   },
   {
     id: "6",
+    authorId: "shelley",
     title: "Frankenstein",
     author: "Mary Shelley",
     coverImageURL: "https://covers.openlibrary.org/b/id/8387805-L.jpg",
@@ -102,6 +109,7 @@ export const books: Book[] = [
   },
   {
     id: "7",
+    authorId: "carroll",
     title: "Alice's Adventures in Wonderland",
     author: "Lewis Carroll",
     coverImageURL: "https://covers.openlibrary.org/b/id/8739204-L.jpg",
@@ -115,6 +123,7 @@ export const books: Book[] = [
   },
   {
     id: "8",
+    authorId: "wilde",
     title: "The Picture of Dorian Gray",
     author: "Oscar Wilde",
     coverImageURL: "https://covers.openlibrary.org/b/id/8410594-L.jpg",
@@ -129,6 +138,7 @@ export const books: Book[] = [
   },
   {
     id: "9",
+    authorId: "stoker",
     title: "Dracula",
     author: "Bram Stoker",
     coverImageURL: "https://covers.openlibrary.org/b/id/8410473-L.jpg",
@@ -137,11 +147,12 @@ export const books: Book[] = [
     year: 1897,
     pages: 418,
     rating: 4.4,
-    description: "The classic horror story about Count Dracula's attempt to move from Transylvania to England so he can find new blood.",
+    description: "The classic horror story about Count Dracula's attempt to move from Transylvania to England to find new blood.",
     tags: ["Horror", "Gothic", "Classic"]
   },
   {
     id: "10",
+    authorId: "wells",
     title: "The War of the Worlds",
     author: "H.G. Wells",
     coverImageURL: "https://covers.openlibrary.org/b/id/8739149-L.jpg",
@@ -155,6 +166,7 @@ export const books: Book[] = [
   },
   {
     id: "11",
+    authorId: "dostoevsky",
     title: "Crime and Punishment",
     author: "Fyodor Dostoevsky",
     coverImageURL: "https://covers.openlibrary.org/b/id/8734261-L.jpg",
@@ -163,12 +175,13 @@ export const books: Book[] = [
     year: 1866,
     pages: 551,
     rating: 4.8,
-    description: "The mental anguish and moral dilemmas of Rodion Raskolnikov, an impoverished student who formulates a plan to kill a pawnbroker.",
+    description: "The mental anguish and moral dilemmas of Rodion Raskolnikov, an impoverished student who plans to kill a pawnbroker.",
     tags: ["Psychology", "Russian", "Classic"],
     featured: true
   },
   {
     id: "12",
+    authorId: "kipling",
     title: "The Jungle Book",
     author: "Rudyard Kipling",
     coverImageURL: "https://covers.openlibrary.org/b/id/8739226-L.jpg",
@@ -187,3 +200,4 @@ export const genres = [...new Set(books.map(b => b.genre))];
 export const getFeaturedBooks = () => books.filter(b => b.featured);
 export const getNewBooks = () => books.filter(b => b.new);
 export const getBookById = (id: string) => books.find(b => b.id === id);
+export const getBooksByAuthorId = (authorId: string) => books.filter(b => b.authorId === authorId);

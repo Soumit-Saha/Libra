@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Shield } from 'lucide-react'
+import { authors } from '../data/authors'
 import { useAuth } from '../context/AuthContext'
 import { useLibrary } from '../context/LibraryContext'
 import { books as staticBooks, getFeaturedBooks, getNewBooks } from '../data/books'
@@ -12,6 +13,7 @@ import MobileBottomNav from '../components/MobileBottomNav'
 export default function DashboardPage() {
   const { user, isAdmin } = useAuth();
   const { searchQuery, setSearchQuery, selectedGenre, bookmarks, readingProgress, uploadedBooks } = useLibrary();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Merge static books + admin-uploaded books (uploaded books appear first under "New")
@@ -82,6 +84,14 @@ export default function DashboardPage() {
             <div style={{ fontSize: '20px' }}>📚</div>
             <span style={{ fontWeight: 800, fontSize: '16px' }}>Libra</span>
           </div>
+          <Link to="/authors" style={{
+            display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px',
+            background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)',
+            borderRadius: 8, color: 'var(--indigo-300)', fontSize: 12, fontWeight: 600,
+            textDecoration: 'none',
+          }}>
+            ✍️ Authors
+          </Link>
           {isAdmin && (
             <Link to="/admin" style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px',
@@ -247,6 +257,112 @@ export default function DashboardPage() {
                 {bookmarkedBooks.map((book, i) => <BookCard key={book.id} book={book} index={i} />)}
               </div>
             </Section>
+          )}
+
+          {/* Authors Spotlight — shown when not filtering */}
+          {!isFiltering && (
+            <div className="animate-fade-in-up" style={{ marginBottom: '48px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '20px' }}>
+                <span style={{ fontSize: '20px' }}>✍️</span>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px' }}>Meet the Authors</h2>
+                <span style={{
+                  fontSize: '12px', fontWeight: 600, padding: '2px 9px',
+                  background: 'rgba(99,102,241,0.12)', color: 'var(--indigo-300)',
+                  borderRadius: '10px', border: '1px solid rgba(99,102,241,0.15)'
+                }}>{authors.length}</span>
+                <Link to="/authors" style={{
+                  marginLeft: 'auto', fontSize: 13, color: 'var(--indigo-300)',
+                  fontWeight: 600, textDecoration: 'none',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                }}>View all ↗</Link>
+              </div>
+              {/* Horizontal scroll strip of author avatars */}
+              <div style={{
+                display: 'flex', gap: 12, overflowX: 'auto',
+                paddingBottom: 8,
+                scrollbarWidth: 'none',
+              }}>
+                {authors.slice(0, 8).map((author, i) => (
+                  <div
+                    key={author.id}
+                    onClick={() => navigate(`/authors?id=${author.id}`)}
+                    className="animate-fade-in-up"
+                    style={{
+                      animationDelay: `${i * 0.05}s`,
+                      opacity: 0,
+                      flexShrink: 0, width: 100,
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                      padding: '16px 10px',
+                      background: 'var(--bg-card)',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      borderRadius: 16, cursor: 'pointer',
+                      transition: 'all 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLElement).style.transform = 'translateY(-5px) scale(1.04)';
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(99,102,241,0.35)';
+                      (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 32px rgba(99,102,241,0.18)';
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLElement).style.transform = 'translateY(0) scale(1)';
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
+                      (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                    }}
+                  >
+                    <div style={{
+                      width: 52, height: 52, borderRadius: 14, overflow: 'hidden',
+                      background: 'linear-gradient(135deg, #1e1b4b, #312e81)',
+                      border: '2px solid rgba(99,102,241,0.2)',
+                    }}>
+                      <img
+                        src={author.photoURL}
+                        alt={author.name}
+                        onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    </div>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, textAlign: 'center',
+                      color: 'var(--text-secondary)', lineHeight: 1.3,
+                      overflow: 'hidden', display: '-webkit-box',
+                      WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any
+                    }}>
+                      {author.name.split(' ').slice(-1)[0]}
+                    </span>
+                    <span style={{
+                      fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 8,
+                      background: 'rgba(99,102,241,0.1)', color: 'var(--indigo-300)',
+                      border: '1px solid rgba(99,102,241,0.15)',
+                    }}>{author.genres[0]}</span>
+                  </div>
+                ))}
+                {/* View all card */}
+                <div
+                  onClick={() => navigate('/authors')}
+                  style={{
+                    flexShrink: 0, width: 100,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    padding: '16px 10px',
+                    background: 'rgba(99,102,241,0.06)',
+                    border: '1px dashed rgba(99,102,241,0.25)',
+                    borderRadius: 16, cursor: 'pointer',
+                    transition: 'all 0.25s',
+                    color: 'var(--indigo-300)',
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.12)';
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(99,102,241,0.4)';
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.06)';
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(99,102,241,0.25)';
+                  }}
+                >
+                  <span style={{ fontSize: 22 }}>✍️</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, textAlign: 'center' }}>View All {authors.length}</span>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* All / Filtered books */}
